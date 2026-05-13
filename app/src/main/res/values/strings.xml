@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Prayers</string>
+    <string name="add_prayer">Add Prayer</string>
+    <string name="edit_prayer">Edit Prayer</string>
+    <string name="title_hint">Title</string>
+    <string name="content_hint">Content</string>
+    <string name="save">Save</string>
+    <string name="delete">Delete</string>
+    <string name="share">Share</string>
+    <string name="confirm_delete">Are you sure you want to delete this prayer?</string>
+    <string name="untitled">Untitled</string>
+    <string name="error_empty_content">Content cannot be empty</string>
+</resources>

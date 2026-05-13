@@ -1,0 +1,14 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Cor do ano 2010: PANTONE 15-5519 Turquesa (#45B1AD) -->
+    <color name="primary">#45B1AD</color>
+    <color name="primary_variant">#378E8A</color>
+    <color name="on_primary">#FFFFFF</color>
+
+    <color name="secondary">#03DAC6</color>
+    <color name="secondary_variant">#018786</color>
+    <color name="on_secondary">#000000</color>
+
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="background">#F5F5F5</color>
+</resources>
