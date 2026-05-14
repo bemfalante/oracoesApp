@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Orações</string>
+    <string name="add_prayer">Adicionar Oração</string>
+    <string name="edit_prayer">Editar Oração</string>
+    <string name="title_hint">Título</string>
+    <string name="content_hint">Conteúdo</string>
+    <string name="save">Salvar</string>
+    <string name="delete">Excluir</string>
+    <string name="share">Compartilhar</string>
+    <string name="confirm_delete">Tem certeza de que deseja excluir esta oração?</string>
+    <string name="untitled">Sem título</string>
+    <string name="error_empty_content">O conteúdo não pode estar vazio</string>
+    <string name="tab_catholic">Católicas</string>
+    <string name="tab_umbanda">Umbanda</string>
+</resources>

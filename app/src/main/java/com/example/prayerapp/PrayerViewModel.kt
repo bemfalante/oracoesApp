@@ -5,7 +5,7 @@ import kotlinx.coroutines.launch
 
 class PrayerViewModel(private val dao: PrayerDao) : ViewModel() {
 
-    val allPrayers: LiveData<List<Prayer>> = dao.getAllPrayers()
+    fun getPrayersByCategory(category: String): LiveData<List<Prayer>> = dao.getPrayersByCategory(category)
 
     fun insert(prayer: Prayer) = viewModelScope.launch {
         dao.insert(prayer)
@@ -13,6 +13,10 @@ class PrayerViewModel(private val dao: PrayerDao) : ViewModel() {
 
     fun update(prayer: Prayer) = viewModelScope.launch {
         dao.update(prayer)
+    }
+
+    fun updateAll(prayers: List<Prayer>) = viewModelScope.launch {
+        dao.updateAll(prayers)
     }
 
     fun delete(prayer: Prayer) = viewModelScope.launch {

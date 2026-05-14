@@ -7,5 +7,7 @@ import androidx.room.PrimaryKey
 data class Prayer(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val title: String,
-    val content: String
+    val content: String,
+    val category: String = "Catholic",
+    val position: Int = 0
 )

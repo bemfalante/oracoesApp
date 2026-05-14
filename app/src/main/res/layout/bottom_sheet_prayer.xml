@@ -10,6 +10,16 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- View Mode Title -->
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceHeadline6"
+            android:textColor="@color/black"
+            android:visibility="gone" />
+
+        <!-- Edit Mode Title -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilTitle"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -24,6 +34,16 @@
                 android:inputType="textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- View Mode Content -->
+        <TextView
+            android:id="@+id/tvContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:visibility="gone" />
+
+        <!-- Edit Mode Content -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/tilContent"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -48,29 +68,44 @@
             android:gravity="end"
             android:orientation="horizontal">
 
-            <Button
+            <ImageButton
                 android:id="@+id/btnDelete"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/delete"
-                android:textColor="@android:color/holo_red_dark"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/delete"
+                android:src="@android:drawable/ic_menu_delete"
+                app:tint="@android:color/holo_red_dark"
                 android:visibility="gone" />
 
-            <Button
+            <ImageButton
+                android:id="@+id/btnEdit"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/edit_prayer"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="@color/primary"
+                android:visibility="gone" />
+
+            <ImageButton
                 android:id="@+id/btnShare"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/share"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/share"
+                android:src="@android:drawable/ic_menu_share"
+                app:tint="@color/primary"
                 android:visibility="gone" />
 
-            <Button
+            <ImageButton
                 android:id="@+id/btnSave"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/save" />
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/save"
+                android:src="@android:drawable/ic_menu_save"
+                app:tint="@color/primary" />
 
         </LinearLayout>
 

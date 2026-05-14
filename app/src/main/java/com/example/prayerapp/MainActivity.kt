@@ -7,8 +7,8 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.prayerapp.databinding.ActivityMainBinding
+import com.google.android.material.tabs.TabLayoutMediator
 import com.example.prayerapp.databinding.BottomSheetPrayerBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
@@ -24,18 +24,16 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val adapter = PrayerAdapter { prayer ->
-            showPrayerBottomSheet(prayer)
-        }
-        binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = adapter
+        val pagerAdapter = PrayerPagerAdapter(this)
+        binding.viewPager.adapter = pagerAdapter
 
-        viewModel.allPrayers.observe(this) { prayers ->
-            adapter.submitList(prayers)
-        }
+        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+            tab.text = if (position == 0) getString(R.string.tab_umbanda) else getString(R.string.tab_catholic)
+        }.attach()
 
         binding.fabAdd.setOnClickListener {
-            showPrayerBottomSheet()
+            val category = if (binding.viewPager.currentItem == 0) "Umbanda" else "Catholic"
+            showPrayerBottomSheet(category = category)
         }
 
         if (savedInstanceState == null) {
@@ -53,43 +51,75 @@ class MainActivity : AppCompatActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (sharedText != null) {
-                showPrayerBottomSheet(Prayer(title = "", content = sharedText))
+                val activeCategory = if (binding.viewPager.currentItem == 0) "Umbanda" else "Catholic"
+                showPrayerBottomSheet(Prayer(title = "", content = sharedText), category = activeCategory)
                 intent.action = null // Prevent re-processing
             }
         }
     }
 
-    private fun showPrayerBottomSheet(prayer: Prayer? = null) {
+    fun showPrayerBottomSheet(prayer: Prayer? = null, category: String = "Catholic") {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = BottomSheetPrayerBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
 
-        val isEditing = prayer != null && prayer.id != 0
+        var isEditMode = prayer == null || prayer.id == 0
+
+        fun updateUI() {
+            if (isEditMode) {
+                sheetBinding.tvTitle.visibility = View.GONE
+                sheetBinding.tvContent.visibility = View.GONE
+                sheetBinding.tilTitle.visibility = View.VISIBLE
+                sheetBinding.tilContent.visibility = View.VISIBLE
+                sheetBinding.btnSave.visibility = View.VISIBLE
+                sheetBinding.btnEdit.visibility = View.GONE
+            } else {
+                sheetBinding.tvTitle.visibility = View.VISIBLE
+                sheetBinding.tvContent.visibility = View.VISIBLE
+                sheetBinding.tilTitle.visibility = View.GONE
+                sheetBinding.tilContent.visibility = View.GONE
+                sheetBinding.btnSave.visibility = View.GONE
+                sheetBinding.btnEdit.visibility = View.VISIBLE
+
+                sheetBinding.tvTitle.text = prayer?.title
+                sheetBinding.tvContent.text = prayer?.content
+            }
+
+            if (prayer != null && prayer.id != 0) {
+                sheetBinding.btnDelete.visibility = View.VISIBLE
+                sheetBinding.btnShare.visibility = View.VISIBLE
+            } else {
+                sheetBinding.btnDelete.visibility = View.GONE
+                sheetBinding.btnShare.visibility = View.GONE
+            }
+        }
 
         if (prayer != null) {
             sheetBinding.etTitle.setText(prayer.title)
             sheetBinding.etContent.setText(prayer.content)
         }
 
-        if (isEditing) {
-            sheetBinding.btnDelete.visibility = View.VISIBLE
-            sheetBinding.btnShare.visibility = View.VISIBLE
+        updateUI()
 
-            sheetBinding.btnDelete.setOnClickListener {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.delete)
-                    .setMessage(R.string.confirm_delete)
-                    .setPositiveButton(android.R.string.ok) { _, _ ->
-                        viewModel.delete(prayer!!)
-                        dialog.dismiss()
-                    }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
-            }
+        sheetBinding.btnEdit.setOnClickListener {
+            isEditMode = true
+            updateUI()
+        }
 
-            sheetBinding.btnShare.setOnClickListener {
-                sharePrayer(prayer!!)
-            }
+        sheetBinding.btnDelete.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.delete)
+                .setMessage(R.string.confirm_delete)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    viewModel.delete(prayer!!)
+                    dialog.dismiss()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+
+        sheetBinding.btnShare.setOnClickListener {
+            sharePrayer(prayer!!)
         }
 
         sheetBinding.btnSave.setOnClickListener {
@@ -103,10 +133,10 @@ class MainActivity : AppCompatActivity() {
 
             val finalTitle = if (title.isBlank()) getString(R.string.untitled) else title
 
-            if (isEditing) {
-                viewModel.update(prayer!!.copy(title = finalTitle, content = content))
+            if (prayer != null && prayer.id != 0) {
+                viewModel.update(prayer.copy(title = finalTitle, content = content))
             } else {
-                viewModel.insert(Prayer(title = finalTitle, content = content))
+                viewModel.insert(Prayer(title = finalTitle, content = content, category = category))
             }
             dialog.dismiss()
         }
