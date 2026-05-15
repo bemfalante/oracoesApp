@@ -50,7 +50,7 @@ class PrayerListFragment : Fragment() {
 
     private fun setupDragAndDrop() {
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         ) {
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -66,7 +66,12 @@ class PrayerListFragment : Fragment() {
                 return true
             }
 
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                val prayer = adapter.currentList[position]
+                val newCategory = if (prayer.category == "Catholic") "Umbanda" else "Catholic"
+                viewModel.update(prayer.copy(category = newCategory, position = 0))
+            }
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)

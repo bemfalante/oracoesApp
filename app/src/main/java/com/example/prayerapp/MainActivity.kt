@@ -3,14 +3,16 @@ package com.example.prayerapp
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.webkit.WebSettings
+import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.example.prayerapp.databinding.ActivityMainBinding
-import com.google.android.material.tabs.TabLayoutMediator
 import com.example.prayerapp.databinding.BottomSheetPrayerBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.tabs.TabLayoutMediator
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,11 +30,11 @@ class MainActivity : AppCompatActivity() {
         binding.viewPager.adapter = pagerAdapter
 
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = if (position == 0) getString(R.string.tab_umbanda) else getString(R.string.tab_catholic)
+            tab.text = if (position == 0) getString(R.string.tab_catholic) else getString(R.string.tab_umbanda)
         }.attach()
 
         binding.fabAdd.setOnClickListener {
-            val category = if (binding.viewPager.currentItem == 0) "Umbanda" else "Catholic"
+            val category = if (binding.viewPager.currentItem == 0) "Catholic" else "Umbanda"
             showPrayerBottomSheet(category = category)
         }
 
@@ -51,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (sharedText != null) {
-                val activeCategory = if (binding.viewPager.currentItem == 0) "Umbanda" else "Catholic"
+                val activeCategory = if (binding.viewPager.currentItem == 0) "Catholic" else "Umbanda"
                 showPrayerBottomSheet(Prayer(title = "", content = sharedText), category = activeCategory)
                 intent.action = null // Prevent re-processing
             }
@@ -66,9 +68,13 @@ class MainActivity : AppCompatActivity() {
         var isEditMode = prayer == null || prayer.id == 0
 
         fun updateUI() {
+            val content = prayer?.content ?: ""
+            val isInstagram = content.contains("instagram.com/p/") || content.contains("instagram.com/reels/") || content.contains("instagram.com/reel/")
+
             if (isEditMode) {
                 sheetBinding.tvTitle.visibility = View.GONE
                 sheetBinding.tvContent.visibility = View.GONE
+                sheetBinding.webViewInstagram.visibility = View.GONE
                 sheetBinding.tilTitle.visibility = View.VISIBLE
                 sheetBinding.tilContent.visibility = View.VISIBLE
                 sheetBinding.btnSave.visibility = View.VISIBLE
@@ -83,6 +89,23 @@ class MainActivity : AppCompatActivity() {
 
                 sheetBinding.tvTitle.text = prayer?.title
                 sheetBinding.tvContent.text = prayer?.content
+
+                if (isInstagram) {
+                    sheetBinding.webViewInstagram.visibility = View.VISIBLE
+                    sheetBinding.webViewInstagram.settings.javaScriptEnabled = true
+                    sheetBinding.webViewInstagram.settings.domStorageEnabled = true
+                    sheetBinding.webViewInstagram.webViewClient = WebViewClient()
+
+                    val url = if (content.contains("?")) {
+                        content.substring(0, content.indexOf("?"))
+                    } else {
+                        content
+                    }
+                    val embedUrl = if (url.endsWith("/")) "${url}embed" else "$url/embed"
+                    sheetBinding.webViewInstagram.loadUrl(embedUrl)
+                } else {
+                    sheetBinding.webViewInstagram.visibility = View.GONE
+                }
             }
 
             if (prayer != null && prayer.id != 0) {
