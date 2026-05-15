@@ -17,7 +17,7 @@ abstract class PrayerDatabase : RoomDatabase() {
 
         private val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE prayers ADD COLUMN category TEXT NOT NULL DEFAULT 'Catholic'")
+                db.execSQL("ALTER TABLE prayers ADD COLUMN category TEXT NOT NULL DEFAULT '${Constants.CATEGORY_CATHOLIC}'")
                 db.execSQL("ALTER TABLE prayers ADD COLUMN position INTEGER NOT NULL DEFAULT 0")
             }
         }

@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
         }.attach()
 
         binding.fabAdd.setOnClickListener {
-            val category = if (binding.viewPager.currentItem == 0) "Catholic" else "Umbanda"
+            val category = if (binding.viewPager.currentItem == 0) Constants.CATEGORY_CATHOLIC else Constants.CATEGORY_UMBANDA
             showPrayerBottomSheet(category = category)
         }
 
@@ -53,14 +53,14 @@ class MainActivity : AppCompatActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (sharedText != null) {
-                val activeCategory = if (binding.viewPager.currentItem == 0) "Catholic" else "Umbanda"
+                val activeCategory = if (binding.viewPager.currentItem == 0) Constants.CATEGORY_CATHOLIC else Constants.CATEGORY_UMBANDA
                 showPrayerBottomSheet(Prayer(title = "", content = sharedText), category = activeCategory)
                 intent.action = null // Prevent re-processing
             }
         }
     }
 
-    fun showPrayerBottomSheet(prayer: Prayer? = null, category: String = "Catholic") {
+    fun showPrayerBottomSheet(prayer: Prayer? = null, category: String = Constants.CATEGORY_CATHOLIC) {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = BottomSheetPrayerBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
@@ -69,7 +69,15 @@ class MainActivity : AppCompatActivity() {
 
         fun updateUI() {
             val content = prayer?.content ?: ""
-            val isInstagram = content.contains("instagram.com/p/") || content.contains("instagram.com/reels/") || content.contains("instagram.com/reel/")
+
+            val instagramRegex = "https?://(?:www\\.)?instagram\\.com/(?:p|reels|reel)/([^/?#&]+)".toRegex()
+            val youtubeRegex = "https?://(?:www\\.)?(?:youtube\\.com/watch\\?v=|youtu\\.be/|youtube\\.com/shorts/|youtube\\.com/embed/)([^/?#&]+)".toRegex()
+
+            val instagramMatch = instagramRegex.find(content)
+            val youtubeMatch = youtubeRegex.find(content)
+
+            val isInstagram = instagramMatch != null
+            val isYoutube = youtubeMatch != null
 
             if (isEditMode) {
                 sheetBinding.tvTitle.visibility = View.GONE
@@ -90,18 +98,24 @@ class MainActivity : AppCompatActivity() {
                 sheetBinding.tvTitle.text = prayer?.title
                 sheetBinding.tvContent.text = prayer?.content
 
-                if (isInstagram) {
+                if (isInstagram || isYoutube) {
                     sheetBinding.webViewInstagram.visibility = View.VISIBLE
                     sheetBinding.webViewInstagram.settings.javaScriptEnabled = true
                     sheetBinding.webViewInstagram.settings.domStorageEnabled = true
+                    sheetBinding.webViewInstagram.settings.mediaPlaybackRequiresUserGesture = false
                     sheetBinding.webViewInstagram.webViewClient = WebViewClient()
 
-                    val url = if (content.contains("?")) {
-                        content.substring(0, content.indexOf("?"))
-                    } else {
-                        content
+                    val embedUrl = when {
+                        isInstagram -> {
+                            val id = instagramMatch?.groupValues?.get(1)
+                            "https://www.instagram.com/p/$id/embed"
+                        }
+                        isYoutube -> {
+                            val id = youtubeMatch?.groupValues?.get(1)
+                            "https://www.youtube.com/embed/$id"
+                        }
+                        else -> ""
                     }
-                    val embedUrl = if (url.endsWith("/")) "${url}embed" else "$url/embed"
                     sheetBinding.webViewInstagram.loadUrl(embedUrl)
                 } else {
                     sheetBinding.webViewInstagram.visibility = View.GONE

@@ -9,8 +9,8 @@ class PrayerPagerAdapter(activity: FragmentActivity) : FragmentStateAdapter(acti
 
     override fun createFragment(position: Int): Fragment {
         return when (position) {
-            0 -> PrayerListFragment.newInstance("Catholic")
-            else -> PrayerListFragment.newInstance("Umbanda")
+            0 -> PrayerListFragment.newInstance(Constants.CATEGORY_CATHOLIC)
+            else -> PrayerListFragment.newInstance(Constants.CATEGORY_UMBANDA)
         }
     }
 }

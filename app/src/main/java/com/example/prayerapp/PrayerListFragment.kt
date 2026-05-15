@@ -20,11 +20,11 @@ class PrayerListFragment : Fragment() {
         PrayerViewModelFactory(PrayerDatabase.getDatabase(requireContext()).prayerDao())
     }
     private lateinit var adapter: PrayerAdapter
-    private var category: String = "Catholic"
+    private var category: String = Constants.CATEGORY_CATHOLIC
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        category = arguments?.getString(ARG_CATEGORY) ?: "Catholic"
+        category = arguments?.getString(ARG_CATEGORY) ?: Constants.CATEGORY_CATHOLIC
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -69,7 +69,7 @@ class PrayerListFragment : Fragment() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val prayer = adapter.currentList[position]
-                val newCategory = if (prayer.category == "Catholic") "Umbanda" else "Catholic"
+                val newCategory = if (prayer.category == Constants.CATEGORY_CATHOLIC) Constants.CATEGORY_UMBANDA else Constants.CATEGORY_CATHOLIC
                 viewModel.update(prayer.copy(category = newCategory, position = 0))
             }
 
