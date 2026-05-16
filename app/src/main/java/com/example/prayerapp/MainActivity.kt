@@ -109,18 +109,30 @@ class MainActivity : AppCompatActivity() {
                     sheetBinding.webViewInstagram.settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
                     sheetBinding.webViewInstagram.webViewClient = WebViewClient()
 
-                    val embedUrl = when {
-                        isInstagram -> {
-                            val id = instagramMatch?.groupValues?.get(1)
-                            "https://www.instagram.com/p/$id/embed"
-                        }
-                        isYoutube -> {
-                            val id = youtubeMatch?.groupValues?.get(1)
-                            "https://www.youtube.com/embed/$id?rel=0&autoplay=0&showinfo=0"
-                        }
-                        else -> ""
+                    if (isYoutube) {
+                        val videoId = youtubeMatch?.groupValues?.get(1) ?: ""
+                        val html = """
+                            <!DOCTYPE html>
+                            <html>
+                            <body style="margin:0;padding:0;">
+                                <iframe
+                                    width="100%"
+                                    height="100%"
+                                    src="https://www.youtube.com/embed/$videoId?rel=0&autoplay=1&showinfo=0"
+                                    frameborder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowfullscreen
+                                    referrerpolicy="strict-origin-when-cross-origin">
+                                </iframe>
+                            </body>
+                            </html>
+                        """.trimIndent()
+                        sheetBinding.webViewInstagram.loadDataWithBaseURL("https://www.youtube.com", html, "text/html", "UTF-8", null)
+                    } else if (isInstagram) {
+                        val id = instagramMatch?.groupValues?.get(1)
+                        val embedUrl = "https://www.instagram.com/p/$id/embed"
+                        sheetBinding.webViewInstagram.loadUrl(embedUrl)
                     }
-                    sheetBinding.webViewInstagram.loadUrl(embedUrl)
                 } else {
                     sheetBinding.webViewInstagram.visibility = View.GONE
                 }
