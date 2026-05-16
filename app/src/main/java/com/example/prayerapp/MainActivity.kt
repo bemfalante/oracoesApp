@@ -103,6 +103,10 @@ class MainActivity : AppCompatActivity() {
                     sheetBinding.webViewInstagram.settings.javaScriptEnabled = true
                     sheetBinding.webViewInstagram.settings.domStorageEnabled = true
                     sheetBinding.webViewInstagram.settings.mediaPlaybackRequiresUserGesture = false
+                    sheetBinding.webViewInstagram.settings.loadWithOverviewMode = true
+                    sheetBinding.webViewInstagram.settings.useWideViewPort = true
+                    // Use a desktop user agent to avoid some embed restrictions
+                    sheetBinding.webViewInstagram.settings.userAgentString = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
                     sheetBinding.webViewInstagram.webViewClient = WebViewClient()
 
                     val embedUrl = when {
@@ -112,7 +116,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         isYoutube -> {
                             val id = youtubeMatch?.groupValues?.get(1)
-                            "https://www.youtube.com/embed/$id"
+                            "https://www.youtube.com/embed/$id?rel=0&autoplay=0&showinfo=0"
                         }
                         else -> ""
                     }
