@@ -3,11 +3,9 @@ package com.example.prayerapp
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-@Entity(tableName = "prayers")
-data class Prayer(
+@Entity(tableName = "categories")
+data class Category(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val title: String,
-    val content: String,
-    val categoryId: Int = 0,
+    val name: String,
     val position: Int = 0
 )

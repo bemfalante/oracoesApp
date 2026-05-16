@@ -12,4 +12,10 @@
     <string name="error_empty_content">O conteúdo não pode estar vazio</string>
     <string name="tab_catholic">Católicas</string>
     <string name="tab_umbanda">Umbanda</string>
+    <string name="add_category">Adicionar Categoria</string>
+    <string name="category_name_hint">Nome da Categoria</string>
+    <string name="rename_category">Renomear Categoria</string>
+    <string name="choose_category">Escolha a Categoria</string>
+    <string name="new_category">Nova Categoria</string>
+    <string name="delete_category_confirm">Excluir esta categoria e todas as suas orações?</string>
 </resources>

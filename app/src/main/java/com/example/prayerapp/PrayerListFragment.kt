@@ -7,9 +7,11 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.prayerapp.databinding.FragmentPrayerListBinding
+import kotlinx.coroutines.launch
 import java.util.*
 
 class PrayerListFragment : Fragment() {
@@ -17,14 +19,15 @@ class PrayerListFragment : Fragment() {
     private var _binding: FragmentPrayerListBinding? = null
     private val binding get() = _binding!!
     private val viewModel: PrayerViewModel by activityViewModels {
-        PrayerViewModelFactory(PrayerDatabase.getDatabase(requireContext()).prayerDao())
+        val db = PrayerDatabase.getDatabase(requireContext())
+        PrayerViewModelFactory(db.prayerDao(), db.categoryDao())
     }
     private lateinit var adapter: PrayerAdapter
-    private var category: String = Constants.CATEGORY_CATHOLIC
+    private var categoryId: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        category = arguments?.getString(ARG_CATEGORY) ?: Constants.CATEGORY_CATHOLIC
+        categoryId = arguments?.getInt(ARG_CATEGORY_ID) ?: 0
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -41,7 +44,7 @@ class PrayerListFragment : Fragment() {
         binding.recyclerView.layoutManager = LinearLayoutManager(context)
         binding.recyclerView.adapter = adapter
 
-        viewModel.getPrayersByCategory(category).observe(viewLifecycleOwner) { prayers ->
+        viewModel.getPrayersByCategory(categoryId).observe(viewLifecycleOwner) { prayers ->
             adapter.submitList(prayers)
         }
 
@@ -69,8 +72,18 @@ class PrayerListFragment : Fragment() {
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
                 val prayer = adapter.currentList[position]
-                val newCategory = if (prayer.category == Constants.CATEGORY_CATHOLIC) Constants.CATEGORY_UMBANDA else Constants.CATEGORY_CATHOLIC
-                viewModel.update(prayer.copy(category = newCategory, position = 0))
+
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val categories = viewModel.getAllCategoriesList()
+                    if (categories.size > 1) {
+                        val currentIdx = categories.indexOfFirst { it.id == prayer.categoryId }
+                        val nextIdx = (currentIdx + 1) % categories.size
+                        val nextCategory = categories[nextIdx]
+                        viewModel.update(prayer.copy(categoryId = nextCategory.id, position = 0))
+                    } else {
+                        adapter.notifyItemChanged(position)
+                    }
+                }
             }
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
@@ -90,11 +103,11 @@ class PrayerListFragment : Fragment() {
     }
 
     companion object {
-        private const val ARG_CATEGORY = "category"
+        private const val ARG_CATEGORY_ID = "categoryId"
 
-        fun newInstance(category: String) = PrayerListFragment().apply {
+        fun newInstance(categoryId: Int) = PrayerListFragment().apply {
             arguments = Bundle().apply {
-                putString(ARG_CATEGORY, category)
+                putInt(ARG_CATEGORY_ID, categoryId)
             }
         }
     }

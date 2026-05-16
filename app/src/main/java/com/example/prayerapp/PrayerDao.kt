@@ -5,8 +5,8 @@ import androidx.room.*
 
 @Dao
 interface PrayerDao {
-    @Query("SELECT * FROM prayers WHERE category = :category ORDER BY position ASC")
-    fun getPrayersByCategory(category: String): LiveData<List<Prayer>>
+    @Query("SELECT * FROM prayers WHERE categoryId = :categoryId ORDER BY position ASC")
+    fun getPrayersByCategory(categoryId: Int): LiveData<List<Prayer>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(prayer: Prayer)
@@ -19,4 +19,7 @@ interface PrayerDao {
 
     @Delete
     suspend fun delete(prayer: Prayer)
+
+    @Query("DELETE FROM prayers WHERE categoryId = :categoryId")
+    suspend fun deleteByCategoryId(categoryId: Int)
 }

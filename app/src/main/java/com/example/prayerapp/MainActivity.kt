@@ -2,40 +2,65 @@ package com.example.prayerapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebViewClient
+import android.widget.ArrayAdapter
+import android.widget.EditText
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.example.prayerapp.databinding.ActivityMainBinding
 import com.example.prayerapp.databinding.BottomSheetPrayerBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: PrayerViewModel by viewModels {
-        PrayerViewModelFactory(PrayerDatabase.getDatabase(this).prayerDao())
+        val db = PrayerDatabase.getDatabase(this)
+        PrayerViewModelFactory(db.prayerDao(), db.categoryDao())
     }
+    private lateinit var pagerAdapter: PrayerPagerAdapter
+    private var categories: List<Category> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val pagerAdapter = PrayerPagerAdapter(this)
+        pagerAdapter = PrayerPagerAdapter(this)
         binding.viewPager.adapter = pagerAdapter
 
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = if (position == 0) getString(R.string.tab_catholic) else getString(R.string.tab_umbanda)
-        }.attach()
+        viewModel.allCategories.observe(this) { newCategories ->
+            categories = newCategories
+            pagerAdapter.setCategories(newCategories)
+
+            // Note: TabLayoutMediator needs to be re-attached or handled when tabs change significantly
+            TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+                tab.text = newCategories[position].name
+            }.attach()
+
+            setupTabLongClick()
+        }
 
         binding.fabAdd.setOnClickListener {
-            val category = if (binding.viewPager.currentItem == 0) Constants.CATEGORY_CATHOLIC else Constants.CATEGORY_UMBANDA
-            showPrayerBottomSheet(category = category)
+            val currentPos = binding.viewPager.currentItem
+            if (currentPos in categories.indices) {
+                showPrayerBottomSheet(categoryId = categories[currentPos].id)
+            } else {
+                Toast.makeText(this, R.string.add_category, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        binding.btnAddCategory.setOnClickListener {
+            showAddCategoryDialog()
         }
 
         if (savedInstanceState == null) {
@@ -53,14 +78,116 @@ class MainActivity : AppCompatActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (sharedText != null) {
-                val activeCategory = if (binding.viewPager.currentItem == 0) Constants.CATEGORY_CATHOLIC else Constants.CATEGORY_UMBANDA
-                showPrayerBottomSheet(Prayer(title = "", content = sharedText), category = activeCategory)
+                showChooseCategoryDialog(sharedText)
                 intent.action = null // Prevent re-processing
             }
         }
     }
 
-    fun showPrayerBottomSheet(prayer: Prayer? = null, category: String = Constants.CATEGORY_CATHOLIC) {
+    private fun showChooseCategoryDialog(sharedText: String) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_choose_category, null)
+        val spinner = dialogView.findViewById<Spinner>(R.id.spinnerCategories)
+        val etNewCategory = dialogView.findViewById<EditText>(R.id.etNewCategory)
+
+        val categoryNames = categories.map { it.name }.toMutableList()
+        categoryNames.add(0, getString(R.string.new_category))
+
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categoryNames)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinner.adapter = adapter
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.choose_category)
+            .setView(dialogView)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val selectedIdx = spinner.selectedItemPosition
+                val newCategoryName = etNewCategory.text.toString()
+
+                if (selectedIdx == 0) {
+                    if (newCategoryName.isNotBlank()) {
+                        lifecycleScope.launch {
+                            val newId = viewModel.insertCategoryWithId(Category(name = newCategoryName, position = categories.size))
+                            showPrayerBottomSheet(Prayer(title = "", content = sharedText), categoryId = newId.toInt())
+                        }
+                    }
+                } else {
+                    val category = categories[selectedIdx - 1]
+                    showPrayerBottomSheet(Prayer(title = "", content = sharedText), categoryId = category.id)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showAddCategoryDialog() {
+        val editText = EditText(this)
+        editText.setPadding(48, 16, 48, 16)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.add_category)
+            .setView(editText)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = editText.text.toString()
+                if (name.isNotBlank()) {
+                    viewModel.insertCategory(Category(name = name, position = categories.size))
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun setupTabLongClick() {
+        val tabLayout = binding.tabLayout
+        for (i in 0 until tabLayout.tabCount) {
+            val tab = tabLayout.getTabAt(i)
+            tab?.view?.setOnLongClickListener {
+                showCategoryOptionsDialog(categories[i])
+                true
+            }
+        }
+    }
+
+    private fun showCategoryOptionsDialog(category: Category) {
+        val options = arrayOf(getString(R.string.rename_category), getString(R.string.delete))
+        AlertDialog.Builder(this)
+            .setTitle(category.name)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> showRenameCategoryDialog(category)
+                    1 -> showDeleteCategoryConfirmDialog(category)
+                }
+            }
+            .show()
+    }
+
+    private fun showRenameCategoryDialog(category: Category) {
+        val editText = EditText(this)
+        editText.setText(category.name)
+        editText.setPadding(48, 16, 48, 16)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.rename_category)
+            .setView(editText)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val newName = editText.text.toString()
+                if (newName.isNotBlank()) {
+                    viewModel.updateCategory(category.copy(name = newName))
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showDeleteCategoryConfirmDialog(category: Category) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete)
+            .setMessage(R.string.delete_category_confirm)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                viewModel.deleteCategory(category)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    fun showPrayerBottomSheet(prayer: Prayer? = null, categoryId: Int = 0) {
         val dialog = BottomSheetDialog(this)
         val sheetBinding = BottomSheetPrayerBinding.inflate(layoutInflater)
         dialog.setContentView(sheetBinding.root)
@@ -189,7 +316,7 @@ class MainActivity : AppCompatActivity() {
             if (prayer != null && prayer.id != 0) {
                 viewModel.update(prayer.copy(title = finalTitle, content = content))
             } else {
-                viewModel.insert(Prayer(title = finalTitle, content = content, category = category))
+                viewModel.insert(Prayer(title = finalTitle, content = content, categoryId = categoryId, position = 0))
             }
             dialog.dismiss()
         }
