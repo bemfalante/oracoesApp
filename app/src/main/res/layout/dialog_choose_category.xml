@@ -23,6 +23,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:hint="@string/category_name_hint"
-        android:inputType="textCapSentences" />
+        android:inputType="textCapSentences"
+        android:visibility="gone" />
 
 </LinearLayout>

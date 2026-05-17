@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.webkit.WebSettings
 import android.webkit.WebViewClient
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.Spinner
@@ -29,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     }
     private lateinit var pagerAdapter: PrayerPagerAdapter
     private var categories: List<Category> = emptyList()
+
+    private var pendingSharedText: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +58,12 @@ class MainActivity : AppCompatActivity() {
                     tab.text = newCategories[position].name
                 }.attach()
                 setupTabLongClick()
+            }
+
+            // Handle pending shared text after categories are loaded
+            pendingSharedText?.let {
+                showChooseCategoryDialog(it)
+                pendingSharedText = null
             }
         }
 
@@ -86,7 +95,11 @@ class MainActivity : AppCompatActivity() {
         if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
             val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
             if (sharedText != null) {
-                showChooseCategoryDialog(sharedText)
+                if (categories.isEmpty() && viewModel.allCategories.value == null) {
+                    pendingSharedText = sharedText
+                } else {
+                    showChooseCategoryDialog(sharedText)
+                }
                 intent.action = null // Prevent re-processing
             }
         }
@@ -104,6 +117,13 @@ class MainActivity : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinner.adapter = adapter
 
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                etNewCategory.visibility = if (position == 0) View.VISIBLE else View.GONE
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
+
         AlertDialog.Builder(this)
             .setTitle(R.string.choose_category)
             .setView(dialogView)
@@ -117,6 +137,8 @@ class MainActivity : AppCompatActivity() {
                             val newId = viewModel.insertCategoryWithId(Category(name = newCategoryName, position = categories.size))
                             showPrayerBottomSheet(Prayer(title = "", content = sharedText), categoryId = newId.toInt())
                         }
+                    } else {
+                        Toast.makeText(this, R.string.category_name_hint, Toast.LENGTH_SHORT).show()
                     }
                 } else {
                     val category = categories[selectedIdx - 1]
