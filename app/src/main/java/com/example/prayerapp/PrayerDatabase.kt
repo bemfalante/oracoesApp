@@ -28,16 +28,24 @@ abstract class PrayerDatabase : RoomDatabase() {
                 // Create categories table
                 db.execSQL("CREATE TABLE IF NOT EXISTS `categories` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `position` INTEGER NOT NULL DEFAULT 0)")
 
-                // Add categoryId to prayers
-                db.execSQL("ALTER TABLE prayers ADD COLUMN categoryId INTEGER NOT NULL DEFAULT 0")
+                // Recreate prayers table to remove old category column and add categoryId
+                db.execSQL("CREATE TABLE `prayers_new` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `title` TEXT NOT NULL, `content` TEXT NOT NULL, `categoryId` INTEGER NOT NULL DEFAULT 0, `position` INTEGER NOT NULL DEFAULT 0)")
 
-                // For existing users, create "Catholic" and "Umbanda" if they had data, or just migrate them to ID 1 and 2
-                // Since we want to start from scratch for new users but not lose data for old ones:
+                // Copy data from old to new
+                // We'll migrate old category names to categoryId later if we can
+                db.execSQL("INSERT INTO `prayers_new` (id, title, content, position) SELECT id, title, content, position FROM prayers")
+
+                // Create temporary migration categories if they existed
                 db.execSQL("INSERT INTO categories (id, name, position) VALUES (1, 'Catholic', 0)")
                 db.execSQL("INSERT INTO categories (id, name, position) VALUES (2, 'Umbanda', 1)")
 
-                db.execSQL("UPDATE prayers SET categoryId = 1 WHERE category = 'Catholic'")
-                db.execSQL("UPDATE prayers SET categoryId = 2 WHERE category = 'Umbanda'")
+                // Try to map old category strings to new IDs in the new table
+                db.execSQL("UPDATE `prayers_new` SET categoryId = 1 WHERE id IN (SELECT id FROM prayers WHERE category = 'Catholic')")
+                db.execSQL("UPDATE `prayers_new` SET categoryId = 2 WHERE id IN (SELECT id FROM prayers WHERE category = 'Umbanda')")
+
+                // Swap tables
+                db.execSQL("DROP TABLE prayers")
+                db.execSQL("ALTER TABLE prayers_new RENAME TO prayers")
             }
         }
 

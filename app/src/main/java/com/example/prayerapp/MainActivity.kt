@@ -42,12 +42,20 @@ class MainActivity : AppCompatActivity() {
             categories = newCategories
             pagerAdapter.setCategories(newCategories)
 
-            // Note: TabLayoutMediator needs to be re-attached or handled when tabs change significantly
-            TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-                tab.text = newCategories[position].name
-            }.attach()
+            if (newCategories.isEmpty()) {
+                binding.tvEmptyInstructions.visibility = View.VISIBLE
+                binding.tabLayout.visibility = View.GONE
+                binding.viewPager.visibility = View.GONE
+            } else {
+                binding.tvEmptyInstructions.visibility = View.GONE
+                binding.tabLayout.visibility = View.VISIBLE
+                binding.viewPager.visibility = View.VISIBLE
 
-            setupTabLongClick()
+                TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+                    tab.text = newCategories[position].name
+                }.attach()
+                setupTabLongClick()
+            }
         }
 
         binding.fabAdd.setOnClickListener {
@@ -139,9 +147,12 @@ class MainActivity : AppCompatActivity() {
         val tabLayout = binding.tabLayout
         for (i in 0 until tabLayout.tabCount) {
             val tab = tabLayout.getTabAt(i)
-            tab?.view?.setOnLongClickListener {
-                showCategoryOptionsDialog(categories[i])
-                true
+            val categoryIndex = i
+            if (categoryIndex in categories.indices) {
+                tab?.view?.setOnLongClickListener {
+                    showCategoryOptionsDialog(categories[categoryIndex])
+                    true
+                }
             }
         }
     }

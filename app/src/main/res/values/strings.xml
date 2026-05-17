@@ -18,4 +18,5 @@
     <string name="choose_category">Choose Category</string>
     <string name="new_category">New Category</string>
     <string name="delete_category_confirm">Delete this category and all its prayers?</string>
+    <string name="no_categories_instructions">Welcome! Please click the + icon in the toolbar to create your first prayer panel (e.g., Religion name).</string>
 </resources>
