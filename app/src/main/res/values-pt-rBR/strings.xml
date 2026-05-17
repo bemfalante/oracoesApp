@@ -16,7 +16,8 @@
     <string name="category_name_hint">Nome da Categoria</string>
     <string name="rename_category">Renomear Categoria</string>
     <string name="choose_category">Escolha a Categoria</string>
-    <string name="new_category">Nova Categoria</string>
+    <string name="new_category">Nova Categoria (Opcional)</string>
+    <string name="move_to">Mover para...</string>
     <string name="delete_category_confirm">Excluir esta categoria e todas as suas orações?</string>
     <string name="no_categories_instructions">Bem-vindo! Por favor, clique no ícone + na barra de ferramentas para criar seu primeiro painel de orações (ex: Nome da religião).</string>
 </resources>

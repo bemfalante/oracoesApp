@@ -37,6 +37,16 @@
                 android:visibility="gone" />
 
             <ImageButton
+                android:id="@+id/btnMove"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:contentDescription="@string/move_to"
+                android:src="@android:drawable/ic_menu_directions"
+                app:tint="@color/primary"
+                android:visibility="gone" />
+
+            <ImageButton
                 android:id="@+id/btnShare"
                 style="@style/Widget.MaterialComponents.Button.TextButton"
                 android:layout_width="48dp"

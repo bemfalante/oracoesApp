@@ -41,7 +41,10 @@ class MainActivity : AppCompatActivity() {
         pagerAdapter = PrayerPagerAdapter(this)
         binding.viewPager.adapter = pagerAdapter
 
+        var tabLayoutMediator: TabLayoutMediator? = null
+
         viewModel.allCategories.observe(this) { newCategories ->
+            val wasEmpty = categories.isEmpty()
             categories = newCategories
             pagerAdapter.setCategories(newCategories)
 
@@ -49,14 +52,20 @@ class MainActivity : AppCompatActivity() {
                 binding.tvEmptyInstructions.visibility = View.VISIBLE
                 binding.tabLayout.visibility = View.GONE
                 binding.viewPager.visibility = View.GONE
+                tabLayoutMediator?.detach()
+                tabLayoutMediator = null
             } else {
                 binding.tvEmptyInstructions.visibility = View.GONE
                 binding.tabLayout.visibility = View.VISIBLE
                 binding.viewPager.visibility = View.VISIBLE
 
-                TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-                    tab.text = newCategories[position].name
-                }.attach()
+                tabLayoutMediator?.detach()
+                tabLayoutMediator = TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+                    if (position in newCategories.indices) {
+                        tab.text = newCategories[position].name
+                    }
+                }
+                tabLayoutMediator?.attach()
                 setupTabLongClick()
             }
 
@@ -110,39 +119,35 @@ class MainActivity : AppCompatActivity() {
         val spinner = dialogView.findViewById<Spinner>(R.id.spinnerCategories)
         val etNewCategory = dialogView.findViewById<EditText>(R.id.etNewCategory)
 
-        val categoryNames = categories.map { it.name }.toMutableList()
-        categoryNames.add(0, getString(R.string.new_category))
+        etNewCategory.visibility = View.VISIBLE
+        val categoryNames = categories.map { it.name }
 
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categoryNames)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        spinner.adapter = adapter
-
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                etNewCategory.visibility = if (position == 0) View.VISIBLE else View.GONE
-            }
-            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        if (categoryNames.isEmpty()) {
+            spinner.visibility = View.GONE
+        } else {
+            spinner.visibility = View.VISIBLE
+            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categoryNames)
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            spinner.adapter = adapter
         }
 
         AlertDialog.Builder(this)
             .setTitle(R.string.choose_category)
             .setView(dialogView)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                val selectedIdx = spinner.selectedItemPosition
-                val newCategoryName = etNewCategory.text.toString()
+                val newCategoryName = etNewCategory.text.toString().trim()
 
-                if (selectedIdx == 0) {
-                    if (newCategoryName.isNotBlank()) {
-                        lifecycleScope.launch {
-                            val newId = viewModel.insertCategoryWithId(Category(name = newCategoryName, position = categories.size))
-                            showPrayerBottomSheet(Prayer(title = "", content = sharedText), categoryId = newId.toInt())
-                        }
-                    } else {
-                        Toast.makeText(this, R.string.category_name_hint, Toast.LENGTH_SHORT).show()
+                if (newCategoryName.isNotBlank()) {
+                    lifecycleScope.launch {
+                        val newId = viewModel.insertCategoryWithId(Category(name = newCategoryName, position = categories.size))
+                        showPrayerBottomSheet(Prayer(title = "", content = sharedText), categoryId = newId.toInt())
                     }
-                } else {
-                    val category = categories[selectedIdx - 1]
+                } else if (categories.isNotEmpty()) {
+                    val selectedIdx = spinner.selectedItemPosition
+                    val category = categories[selectedIdx]
                     showPrayerBottomSheet(Prayer(title = "", content = sharedText), categoryId = category.id)
+                } else {
+                    Toast.makeText(this, R.string.category_name_hint, Toast.LENGTH_SHORT).show()
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -301,9 +306,11 @@ class MainActivity : AppCompatActivity() {
             if (prayer != null && prayer.id != 0) {
                 sheetBinding.btnDelete.visibility = View.VISIBLE
                 sheetBinding.btnShare.visibility = View.VISIBLE
+            sheetBinding.btnMove.visibility = View.VISIBLE
             } else {
                 sheetBinding.btnDelete.visibility = View.GONE
                 sheetBinding.btnShare.visibility = View.GONE
+            sheetBinding.btnMove.visibility = View.GONE
             }
         }
 
@@ -335,6 +342,10 @@ class MainActivity : AppCompatActivity() {
             sharePrayer(prayer!!)
         }
 
+        sheetBinding.btnMove.setOnClickListener {
+            showMovePrayerDialog(prayer!!, dialog)
+        }
+
         sheetBinding.btnSave.setOnClickListener {
             val title = sheetBinding.etTitle.text.toString()
             val content = sheetBinding.etContent.text.toString()
@@ -355,6 +366,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         dialog.show()
+    }
+
+    private fun showMovePrayerDialog(prayer: Prayer, bottomSheet: BottomSheetDialog) {
+        val otherCategories = categories.filter { it.id != prayer.categoryId }
+        if (otherCategories.isEmpty()) {
+            Toast.makeText(this, R.string.add_category, Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val categoryNames = otherCategories.map { it.name }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.move_to)
+            .setItems(categoryNames) { _, which ->
+                val newCategory = otherCategories[which]
+                viewModel.update(prayer.copy(categoryId = newCategory.id, position = 0))
+                bottomSheet.dismiss()
+            }
+            .show()
     }
 
     private fun sharePrayer(prayer: Prayer) {

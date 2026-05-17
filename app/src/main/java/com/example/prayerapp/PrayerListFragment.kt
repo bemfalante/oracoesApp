@@ -53,7 +53,7 @@ class PrayerListFragment : Fragment() {
 
     private fun setupDragAndDrop() {
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
         ) {
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -69,22 +69,7 @@ class PrayerListFragment : Fragment() {
                 return true
             }
 
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                val prayer = adapter.currentList[position]
-
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val categories = viewModel.getAllCategoriesList()
-                    if (categories.size > 1) {
-                        val currentIdx = categories.indexOfFirst { it.id == prayer.categoryId }
-                        val nextIdx = (currentIdx + 1) % categories.size
-                        val nextCategory = categories[nextIdx]
-                        viewModel.update(prayer.copy(categoryId = nextCategory.id, position = 0))
-                    } else {
-                        adapter.notifyItemChanged(position)
-                    }
-                }
-            }
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {}
 
             override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
                 super.clearView(recyclerView, viewHolder)
