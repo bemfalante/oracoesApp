@@ -19,4 +19,7 @@ interface StoicDao {
 
     @Query("SELECT COUNT(*) FROM stoic_meditations")
     suspend fun getCount(): Int
+
+    @Query("DELETE FROM stoic_meditations")
+    suspend fun deleteAll()
 }

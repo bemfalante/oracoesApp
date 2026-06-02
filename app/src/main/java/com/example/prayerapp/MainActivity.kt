@@ -102,7 +102,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkStoicData() {
         lifecycleScope.launch {
-            if (viewModel.getStoicCount() == 0) {
+            // Ensure all 366 days are loaded
+            val count = viewModel.getStoicCount()
+            if (count < 366) {
+                if (count > 0) {
+                    viewModel.clearStoicData()
+                }
                 val meditations = loadStoicDataFromJson()
                 viewModel.insertStoicMeditations(meditations)
             }

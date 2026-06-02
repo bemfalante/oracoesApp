@@ -60,6 +60,9 @@ class PrayerViewModel(private val prayerDao: PrayerDao, private val categoryDao:
     fun insertStoicMeditations(meditations: List<StoicMeditation>) = viewModelScope.launch {
         stoicDao.insertAll(meditations)
     }
+    fun clearStoicData() = viewModelScope.launch {
+        stoicDao.deleteAll()
+    }
 }
 
 class PrayerViewModelFactory(private val prayerDao: PrayerDao, private val categoryDao: CategoryDao, private val stoicDao: StoicDao) : ViewModelProvider.Factory {

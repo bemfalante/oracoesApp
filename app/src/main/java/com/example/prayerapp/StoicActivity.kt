@@ -48,7 +48,7 @@ class StoicActivity : AppCompatActivity() {
         updateMonth()
     }
 
-    private fun updateMonth() {
+    private fun updateMonth(isInitial: Boolean = false) {
         val month = currentCalendar.get(Calendar.MONTH) + 1
         binding.tvMonthName.text = currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault())
 
@@ -56,12 +56,10 @@ class StoicActivity : AppCompatActivity() {
             currentMeditations = meditations
             renderCalendar()
 
-            // Auto-select day if current month
-            val now = Calendar.getInstance()
-            if (currentCalendar.get(Calendar.MONTH) == now.get(Calendar.MONTH) &&
-                currentCalendar.get(Calendar.YEAR) == now.get(Calendar.YEAR)) {
-                selectDay(now.get(Calendar.DAY_OF_MONTH))
+            if (isInitial) {
+                selectDay(currentCalendar.get(Calendar.DAY_OF_MONTH))
             } else {
+                // If we changed month, select 1st day of that month
                 selectDay(1)
             }
         }
