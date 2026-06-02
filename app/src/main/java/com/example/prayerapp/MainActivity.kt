@@ -20,13 +20,14 @@ import com.example.prayerapp.databinding.BottomSheetPrayerBinding
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: PrayerViewModel by viewModels {
         val db = PrayerDatabase.getDatabase(this)
-        PrayerViewModelFactory(db.prayerDao(), db.categoryDao())
+        PrayerViewModelFactory(db.prayerDao(), db.categoryDao(), db.stoicDao())
     }
     private lateinit var pagerAdapter: PrayerPagerAdapter
     private var categories: List<Category> = emptyList()
@@ -89,9 +90,45 @@ class MainActivity : AppCompatActivity() {
             showAddCategoryDialog()
         }
 
+        binding.btnStoic.setOnClickListener {
+            startActivity(Intent(this, StoicActivity::class.java))
+        }
+
         if (savedInstanceState == null) {
             handleIntent(intent)
+            checkStoicData()
         }
+    }
+
+    private fun checkStoicData() {
+        lifecycleScope.launch {
+            if (viewModel.getStoicCount() == 0) {
+                val meditations = loadStoicDataFromJson()
+                viewModel.insertStoicMeditations(meditations)
+            }
+        }
+    }
+
+    private fun loadStoicDataFromJson(): List<StoicMeditation> {
+        val list = mutableListOf<StoicMeditation>()
+        try {
+            val jsonString = assets.open("stoic_meditations.json").bufferedReader().use { it.readText() }
+            val jsonArray = JSONArray(jsonString)
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(StoicMeditation(
+                    month = obj.getInt("month"),
+                    day = obj.getInt("day"),
+                    title = obj.getString("title"),
+                    quote = obj.getString("quote"),
+                    source = obj.getString("source"),
+                    commentary = obj.getString("commentary")
+                ))
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return list
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -27,6 +27,11 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".StoicActivity"
+            android:exported="false"
+            android:theme="@style/Theme.PrayerApp" />
     </application>
 
 </manifest>

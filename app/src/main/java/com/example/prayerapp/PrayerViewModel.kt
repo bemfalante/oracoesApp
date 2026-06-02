@@ -3,7 +3,7 @@ package com.example.prayerapp
 import androidx.lifecycle.*
 import kotlinx.coroutines.launch
 
-class PrayerViewModel(private val prayerDao: PrayerDao, private val categoryDao: CategoryDao) : ViewModel() {
+class PrayerViewModel(private val prayerDao: PrayerDao, private val categoryDao: CategoryDao, private val stoicDao: StoicDao) : ViewModel() {
 
     val allCategories: LiveData<List<Category>> = categoryDao.getAllCategories()
 
@@ -49,13 +49,24 @@ class PrayerViewModel(private val prayerDao: PrayerDao, private val categoryDao:
     fun delete(prayer: Prayer) = viewModelScope.launch {
         prayerDao.delete(prayer)
     }
+
+    // Stoic operations
+    fun getStoicMeditation(month: Int, day: Int) = stoicDao.getMeditation(month, day)
+    fun getStoicMeditationsByMonth(month: Int) = stoicDao.getMeditationsByMonth(month)
+    fun updateStoicMeditation(meditation: StoicMeditation) = viewModelScope.launch {
+        stoicDao.update(meditation)
+    }
+    suspend fun getStoicCount() = stoicDao.getCount()
+    fun insertStoicMeditations(meditations: List<StoicMeditation>) = viewModelScope.launch {
+        stoicDao.insertAll(meditations)
+    }
 }
 
-class PrayerViewModelFactory(private val prayerDao: PrayerDao, private val categoryDao: CategoryDao) : ViewModelProvider.Factory {
+class PrayerViewModelFactory(private val prayerDao: PrayerDao, private val categoryDao: CategoryDao, private val stoicDao: StoicDao) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(PrayerViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return PrayerViewModel(prayerDao, categoryDao) as T
+            return PrayerViewModel(prayerDao, categoryDao, stoicDao) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

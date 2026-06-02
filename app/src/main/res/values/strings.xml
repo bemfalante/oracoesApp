@@ -20,4 +20,7 @@
     <string name="move_to">Move to...</string>
     <string name="delete_category_confirm">Delete this category and all its prayers?</string>
     <string name="no_categories_instructions">Welcome! Please click the + icon in the toolbar to create your first prayer panel (e.g., Religion name).</string>
+    <string name="stoic_title">Daily Stoic</string>
+    <string name="mark_as_read">Mark as Read</string>
+    <string name="already_read">Read</string>
 </resources>

@@ -20,7 +20,7 @@ class PrayerListFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: PrayerViewModel by activityViewModels {
         val db = PrayerDatabase.getDatabase(requireContext())
-        PrayerViewModelFactory(db.prayerDao(), db.categoryDao())
+        PrayerViewModelFactory(db.prayerDao(), db.categoryDao(), db.stoicDao())
     }
     private lateinit var adapter: PrayerAdapter
     private var categoryId: Int = 0

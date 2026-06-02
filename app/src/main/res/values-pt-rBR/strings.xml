@@ -20,4 +20,7 @@
     <string name="move_to">Mover para...</string>
     <string name="delete_category_confirm">Excluir esta categoria e todas as suas orações?</string>
     <string name="no_categories_instructions">Bem-vindo! Por favor, clique no ícone + na barra de ferramentas para criar seu primeiro painel de orações (ex: Nome da religião).</string>
+    <string name="stoic_title">Diário Estoico</string>
+    <string name="mark_as_read">Marcar como Lido</string>
+    <string name="already_read">Lido</string>
 </resources>
