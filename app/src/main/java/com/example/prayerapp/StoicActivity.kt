@@ -48,19 +48,26 @@ class StoicActivity : AppCompatActivity() {
         updateMonth()
     }
 
+    private var isFirstMonthLoad = true
+
     private fun updateMonth(isInitial: Boolean = false) {
         val month = currentCalendar.get(Calendar.MONTH) + 1
         binding.tvMonthName.text = currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault())
 
+        isFirstMonthLoad = true
+        // Remove previous observer to avoid multiple triggers
+        viewModel.getStoicMeditationsByMonth(month).removeObservers(this)
         viewModel.getStoicMeditationsByMonth(month).observe(this) { meditations ->
             currentMeditations = meditations
             renderCalendar()
 
-            if (isInitial) {
-                selectDay(currentCalendar.get(Calendar.DAY_OF_MONTH))
-            } else {
-                // If we changed month, select 1st day of that month
-                selectDay(1)
+            if (isFirstMonthLoad) {
+                if (isInitial) {
+                    selectDay(currentCalendar.get(Calendar.DAY_OF_MONTH))
+                } else {
+                    selectDay(1)
+                }
+                isFirstMonthLoad = false
             }
         }
     }
@@ -130,6 +137,9 @@ class StoicActivity : AppCompatActivity() {
         val meditation = currentMeditations.find { it.day == day }
         if (meditation != null) {
             showMeditation(meditation)
+            binding.nestedScrollView.post {
+                binding.nestedScrollView.smoothScrollTo(0, 0)
+            }
         } else {
             binding.meditationContent.visibility = View.GONE
         }
@@ -145,7 +155,10 @@ class StoicActivity : AppCompatActivity() {
         updateReadButton(meditation.isRead)
 
         binding.btnMarkRead.setOnClickListener {
-            viewModel.updateStoicMeditation(meditation.copy(isRead = !meditation.isRead))
+            val updatedMeditation = meditation.copy(isRead = !meditation.isRead)
+            viewModel.updateStoicMeditation(updatedMeditation)
+            // Update local button UI immediately without re-rendering everything
+            updateReadButton(updatedMeditation.isRead)
         }
     }
 
