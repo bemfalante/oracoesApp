@@ -30,50 +30,47 @@ class StoicActivity : AppCompatActivity() {
         binding.toolbar.setNavigationOnClickListener { finish() }
 
         setupCalendar()
-        observeMeditations()
+        viewModel.stoicMeditationsForMonth.observe(this) { meditations ->
+            val expectedMonth = currentCalendar.get(Calendar.MONTH) + 1
+
+            // Check if the data received belongs to the currently displayed month
+            val isCorrectMonth = meditations.all { it.month == expectedMonth }
+
+            if (isCorrectMonth) {
+                currentMeditations = meditations
+                renderCalendar()
+
+                val meditation = currentMeditations.find { it.day == selectedDay }
+                if (meditation != null) {
+                    showMeditation(meditation)
+                }
+            }
+        }
 
         binding.btnPrevMonth.setOnClickListener {
             currentCalendar.add(Calendar.MONTH, -1)
+            selectedDay = 1
             updateMonth()
         }
 
         binding.btnNextMonth.setOnClickListener {
             currentCalendar.add(Calendar.MONTH, 1)
+            selectedDay = 1
             updateMonth()
         }
     }
 
     private fun setupCalendar() {
         binding.rvCalendar.layoutManager = GridLayoutManager(this, 7)
+        val initialDay = currentCalendar.get(Calendar.DAY_OF_MONTH)
+        selectedDay = initialDay
         updateMonth()
     }
 
-    private var isFirstMonthLoad = true
-
-    private fun updateMonth(isInitial: Boolean = false) {
+    private fun updateMonth() {
         val month = currentCalendar.get(Calendar.MONTH) + 1
         binding.tvMonthName.text = currentCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault())
-
-        isFirstMonthLoad = true
-        // Remove previous observer to avoid multiple triggers
-        viewModel.getStoicMeditationsByMonth(month).removeObservers(this)
-        viewModel.getStoicMeditationsByMonth(month).observe(this) { meditations ->
-            currentMeditations = meditations
-            renderCalendar()
-
-            if (isFirstMonthLoad) {
-                if (isInitial) {
-                    selectDay(currentCalendar.get(Calendar.DAY_OF_MONTH))
-                } else {
-                    selectDay(1)
-                }
-                isFirstMonthLoad = false
-            }
-        }
-    }
-
-    private fun observeMeditations() {
-        // Handled in updateMonth for now
+        viewModel.setStoicMonth(month)
     }
 
     private fun renderCalendar() {
@@ -157,7 +154,6 @@ class StoicActivity : AppCompatActivity() {
         binding.btnMarkRead.setOnClickListener {
             val updatedMeditation = meditation.copy(isRead = !meditation.isRead)
             viewModel.updateStoicMeditation(updatedMeditation)
-            // Update local button UI immediately without re-rendering everything
             updateReadButton(updatedMeditation.isRead)
         }
     }

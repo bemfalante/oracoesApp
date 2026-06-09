@@ -51,8 +51,16 @@ class PrayerViewModel(private val prayerDao: PrayerDao, private val categoryDao:
     }
 
     // Stoic operations
+    private val selectedMonth = MutableLiveData<Int>()
+    val stoicMeditationsForMonth: LiveData<List<StoicMeditation>> = selectedMonth.switchMap { month ->
+        stoicDao.getMeditationsByMonth(month)
+    }
+
+    fun setStoicMonth(month: Int) {
+        selectedMonth.value = month
+    }
+
     fun getStoicMeditation(month: Int, day: Int) = stoicDao.getMeditation(month, day)
-    fun getStoicMeditationsByMonth(month: Int) = stoicDao.getMeditationsByMonth(month)
     fun updateStoicMeditation(meditation: StoicMeditation) = viewModelScope.launch {
         stoicDao.update(meditation)
     }
